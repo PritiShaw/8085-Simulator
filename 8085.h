@@ -15,7 +15,7 @@ typedef struct Flags
 	uint8_t pad : 3; // 3 empty
 } Flags;
 
-typedef enum { UNASSIGNED, DATA_TRANSFER , ARITHETIC_LOGIC, BRANCH, MACHINE_CONTROL, ERROR  } intruction_type;
+typedef enum { UNASSIGNED, DATA_TRANSFER , ARITHMETIC_LOGIC, BRANCH, MACHINE_CONTROL, ERROR  } intruction_type;
 
 typedef struct Instruction
 {
