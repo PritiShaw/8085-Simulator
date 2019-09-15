@@ -3,8 +3,11 @@
 int labelCount = 0;
 int lineCount = 1;
 int instCount = 0;
-Instruction instSet[100];
+uint8_t ram[0x1000];
+uint16_t temp_sp = 0x0000;
+Instruction instSet[1000];
 Label labels[100];
+uint16_t load_address = 0x0000;
 
 int searchLabel(char * key){
     for(int i = 0 ; i < labelCount; i++)
@@ -40,60 +43,191 @@ int detectLabel(char * line){
         tempLabel.lineNo = lineCount;
         tempLabel.instNo = instCount;
         tempLabel.references = 0;
+        tempLabel.linkedCount = 0;
         strcpy(tempLabel.name,temp);
         labels[labelCount++] = tempLabel;
+        return -1;
+    }
+    else if(labels[i].instNo==-1 && labels[i].references>0){
+        labels[i].instNo = instCount;
+        labels[i].lineNo = lineCount;
         return -1;
     }
     return i;
 }
 
-intruction_type getMnemonicsType(char * m){
-    // UNASSIGNED, DATA_TRANSFER , ARITHMETIC_LOGIC, BRANCH, MACHINE_CONTROL, ERROR
-    if( strcmp(m,"MOV")==0 || strcmp(m,"MVI")==0 || strcmp(m,"XCHG")==0 || strcmp(m,"LXI")==0 || 
-        strcmp(m,"LDAX")==0 || strcmp(m,"LHLD")==0 || strcmp(m,"LDA")==0 || strcmp(m,"STAX")==0 ||
-        strcmp(m,"SHLD")==0 || strcmp(m,"STA")==0
-    )
-        return DATA_TRANSFER;
-    else if( strcmp(m,"ADD")==0 || strcmp(m,"ADC")==0 || strcmp(m,"SUB")==0 || strcmp(m,"SBB")==0 || 
-        strcmp(m,"DAD")==0 || strcmp(m,"INR")==0 || strcmp(m,"INX")==0 || strcmp(m,"DCR")==0 ||
-        strcmp(m,"DCX")==0 || strcmp(m,"DAA")==0 || strcmp(m,"CMA")==0 || strcmp(m,"STC")==0 ||
-        strcmp(m,"CMC")==0 || strcmp(m,"RLC")==0 || strcmp(m,"RRC")==0 || strcmp(m,"RAL")==0 ||
-        strcmp(m,"RAR")==0 || strcmp(m,"ANA")==0 || strcmp(m,"XRA")==0 || strcmp(m,"ORA")==0 ||
-        strcmp(m,"CMP")==0 || strcmp(m,"ADI")==0 || strcmp(m,"ACI")==0 || strcmp(m,"SUI")==0 ||
-        strcmp(m,"SBI")==0 || strcmp(m,"ANI")==0 || strcmp(m,"XRI")==0 || strcmp(m,"ORI")==0 ||
-        strcmp(m,"CPI")==0 
-    )
-        return ARITHMETIC_LOGIC;
-    else if( strcmp(m,"JMP")==0 || strcmp(m,"JNZ")==0 || strcmp(m,"JZ")==0 || strcmp(m,"JNC")==0 || 
-        strcmp(m,"JC")==0 || strcmp(m,"JPO")==0 || strcmp(m,"JPE")==0 || strcmp(m,"JP")==0 ||
-        strcmp(m,"JM")==0 || strcmp(m,"PCHL")==0 || strcmp(m,"CALL")==0 || strcmp(m,"CNZ")==0 ||
-        strcmp(m,"CNC")==0 || strcmp(m,"CZ")==0 || strcmp(m,"CC")==0 || strcmp(m,"CPO")==0 || 
-        strcmp(m,"CPE")==0 || strcmp(m,"CP")==0 || strcmp(m,"CM")==0 || strcmp(m,"RET")==0 || 
-        strcmp(m,"RNZ")==0 || strcmp(m,"RZ")==0 || strcmp(m,"RNC")==0 || strcmp(m,"RC")==0 || 
-        strcmp(m,"RPO")==0 || strcmp(m,"RPE")==0 || strcmp(m,"RP")==0 || strcmp(m,"RM")==0 ||
-        strcmp(m,"RST")==0
-    )
-        return BRANCH;
-    else if( strcmp(m,"PUSH")==0 || strcmp(m,"POP")==0 || strcmp(m,"XTML")==0 || strcmp(m,"SPHL")==0 || 
-        strcmp(m,"OUT")==0 || strcmp(m,"IN")==0 || strcmp(m,"DI")==0 || strcmp(m,"EI")==0 ||
-        strcmp(m,"NOP")==0 || strcmp(m,"HLT")==0 || strcmp(m,"RIM")==0 || strcmp(m,"SIM")==0 
-    )
-        return MACHINE_CONTROL;
-    /*else if( strcmp(m,"ORG")==0 || strcmp(m,"END")==0 || strcmp(m,"EQU")==0 || strcmp(m,"SET")==0 || 
-        strcmp(m,"DS")==0 || strcmp(m,"DB")==0 || strcmp(m,"DW")==0 || strcmp(m,"MACRO")==0 ||
-        strcmp(m,"ENDM")==0 || strcmp(m,"LOCAL")==0 || strcmp(m,"REPT")==0 || strcmp(m,"ZRP")==0 ||
-        strcmp(m,"IRPC")==0 || strcmp(m,"EXITM")==0 || strcmp(m,"ASEG")==0 || strcmp(m,"DSEG")==0 || 
-        strcmp(m,"CSEG")==0 || strcmp(m,"PUBLIC")==0 || strcmp(m,"EXTRN")==0  || strcmp(m,"NAME")==0 || 
-        strcmp(m,"STKLN")==0 || strcmp(m,"STACK")==0 || strcmp(m,"MEMORY")==0 ||strcmp(m,"IF")==0 || 
-        strcmp(m,"ELSE")==0 || strcmp(m,"ENDIF")==0
-    )
-        return ;*/
-    else
-        return ERROR;
+int generateInstruction(){
+    char operand[10];
+    char mne[10];
+    int size,isComma,bit;
+    for (int i = 0; i < instCount ; i++) {
+        strcpy(operand, instSet[i].operand);
+        strcpy(mne, instSet[i].mnemonics);
+        bit = -1;
+        isComma = -1;
+        switch(strlen(operand)){
+            case 0:
+                size = 1;
+                break;
+            case 1:
+                size = 2;
+                break;
+            default:
+                for(int i = 0; i < strlen(operand); i++){
+                    if(operand[i]==',')
+                        if(isComma>0){
+                            printf("Parse Error\n");
+                            exit(0);
+                        }
+                        else
+                            isComma = i;
+                }
+                if(isComma>-1){
+                    if(strlen(operand)==7){
+                        bit = 16;
+                        size = 3;
+                    }
+                    else if(strlen(operand)==5){
+                        bit = 8;
+                        size = 2;
+                    }
+                    else if(strlen(operand)==3){
+                        bit = -1;
+                        size = 1;
+                    }
+                }
+                else {
+                    if(strlen(operand)==5){
+                        bit = 16;
+                        size = 3;
+                    }
+                    else if(strlen(operand)==3){
+                        bit = 8;
+                        size = 2;
+                    }
+                    else{
+                        size = 3;
+                    }
+                }
+                break;
+        }
+        uint8_t opCode;
+        int labelID,tempInt,tempI;
+        char temp[16];
+        for(tempI = 0; tempI < labelCount; tempI++){
+            if(labels[tempI].instNo == i){
+                labels[tempI].declaration = temp_sp+load_address;
+                break;
+            }
+        }
+        switch (size * bit * isComma / abs(isComma))
+        {
+            case -1:
+                // MOV A,D
+                strcpy(temp,mne);
+                strcat(temp,operand);
+                opCode = getOpcode(temp,size);
+                ram[temp_sp++] = opCode;
+                break;
+            case 1:
+                // NOP
+                opCode = getOpcode(mne,size);
+                ram[temp_sp++] = opCode;
+                break;
+            case 2:
+                // ADD A
+                strcpy(temp,mne);
+                strcat(temp,operand);
+                opCode = getOpcode(temp,1);
+                ram[temp_sp++] = opCode;
+                break;
+            case 3:
+                // JZ LABEL
+                opCode = getOpcode(mne,size);
+                ram[temp_sp++] = opCode;
+                labelID = searchLabel(operand);
+                if(labels[labelID].instNo==-1){
+                    printf("Error Label %s not defined\n",labels[labelID].name);
+                    exit(0);
+                }
+                labels[labelID].linkedFrom[labels[labelID].linkedCount++] = temp_sp;
+                ram[temp_sp++] = labelID;
+                ram[temp_sp++] = labelID;
+                break;
+            case 16:
+                // MVI A 00H
+                strcpy(temp,mne);
+                strcat(temp,operand);
+                temp[strlen(temp)-4] = '\0';
+                opCode = getOpcode(temp,size);
+                ram[temp_sp++] = opCode;
+                strcpy(temp,operand);
+                for(tempI=0;tempI<strlen(temp);tempI++){
+                    if(temp[tempI]==',')
+                        break;
+                }
+                tempI++;
+                for(tempInt=0;tempI<strlen(temp);tempInt++,tempI++){
+                    temp[tempInt] = temp[tempI];
+                }
+                temp[tempInt] = '\0';
+                opCode = strtoul(temp, NULL, 16);
+                ram[temp_sp++] = opCode;
+                break;
+            case -16:
+                // CPI 00H
+                opCode = getOpcode(mne,size);
+                ram[temp_sp++] = opCode;
+                opCode = strtoul(operand, NULL, 16);
+                ram[temp_sp++] = opCode;
+                break;
+            case 48:
+                // LXI B 0000H
+                strcpy(temp,mne);
+                strcat(temp,operand);
+                temp[strlen(temp)-6] = '\0';
+                opCode = getOpcode(temp,size);
+                ram[temp_sp++] = opCode;
+                strcpy(temp,operand);
+                for(tempI=0;tempI<strlen(temp);tempI++)
+                    if(temp[tempI]==',')
+                        break;
+                
+                tempI++;
+                for(tempInt=0;tempI<strlen(temp);tempInt++,tempI++)
+                    temp[tempInt] = temp[tempI];
+                
+                temp[tempInt] = '\0';              
+                opCode = strtoul(temp, NULL, 16);
+                ram[temp_sp++] = opCode;
+                temp[2] = 'H';
+                opCode = strtoul(temp, NULL, 16);
+                ram[temp_sp++] = opCode;
+                break;
+            case -48:
+                // CP 0000H
+                opCode = getOpcode(mne,size);
+                ram[temp_sp++] = opCode;
+                opCode = strtoul(operand, NULL, 16);
+                ram[temp_sp++] = opCode;
+                strcpy(temp,operand);
+                temp[2] = 'H';
+                opCode = strtoul(temp, NULL, 16);
+                ram[temp_sp++] = opCode;
+                break;
+        }
+    }
+
+    for(int i = 0; i < labelCount; i++){
+        for (int labelI = 0; labelI < labels[i].linkedCount; labelI++){
+            ram[labels[i].linkedFrom[labelI]] = (uint8_t)labels[i].declaration;
+            ram[labels[i].linkedFrom[labelI]+0x01] = (uint8_t)((labels[i].declaration >> 8));
+        }
+    }
 }
 
 Instruction parseInstruction(char * inst) {
-    Instruction parsed = {"","","","","","",0,UNASSIGNED,0};
+    Instruction parsed = {"","","","","",0,UNASSIGNED,0};
     strcpy(parsed.instruction,inst);
     switch(strlen(inst)){
         case 0:
@@ -136,13 +270,54 @@ Instruction parseInstruction(char * inst) {
                 exit(0);
         }
         step = 0;
-        for(i = 0; i < strlen(inst); i++){
+        for(i = 0; i < (int)strlen(inst); i++){
             if(inst[i] == ' ')
                 break;
             temp[i] = inst[i];
         }
         temp[i] = '\0';
+        strcpy(parsed.mnemonics,temp);
         parsed.type = getMnemonicsType(temp);
+        step = i;
+        for(j=0; i < (int)strlen(inst); i++){
+            if(inst[i] == ' ')
+                continue;
+            else if( inst[i] == '\0')
+                break;
+            temp[j++] = inst[i];
+        }     
+        temp[j] = '\0';
+        strcpy(parsed.operand,temp);
+        if(parsed.type==JUMP){
+            i = step;
+            if(strcmp(parsed.mnemonics,"PCHL")!=0){
+                for(; i < (int)strlen(inst); i++){
+                    if(inst[i] != ' ')
+                        break;
+                }        
+                for(j=0; i < (int)strlen(inst); i++){
+                    if(inst[i] == ' ' || inst[i] == '\0')
+                        break;
+                    temp[j++] = inst[i];
+                }                        
+                temp[j] = '\0';
+                int labelPresent = searchLabel(temp);
+                if(labelPresent>-1){
+                    strcpy(parsed.toLabel,labels[labelPresent].name);
+                    labels[labelPresent].references++;
+                }
+                else{
+                    //Forward Reference
+                    //Make empty Label
+                    Label tempLabel;
+                    tempLabel.references = 1;
+                    tempLabel.instNo = -1;
+                    tempLabel.linkedCount = 0;
+                    strcpy(tempLabel.name,temp);
+                    labels[labelCount++] = tempLabel;
+                }
+            }
+        }
         parsed.error = 1;
     }
     return parsed;
@@ -162,17 +337,34 @@ Instruction parseLine(char* line){
     temp[length] = '\0';
     return parseInstruction(temp);    
 }
+
+void showOpcode(){
+    printf("\n Memory\t| Opcode\n------------------\n");
+    for (uint16_t i = 0; i <temp_sp;i++)
+        printf("  %04x\t|   %02x\n",i+load_address,ram[i]);
+}
+
+void showMnemonics(){
+    for (int i = 0; i < instCount ; i++) {
+        printf("%s\n",instSet[i].instruction);
+    }
+}
+
 int main(int argc, char** argv){
-    FILE *fptr;
-    char line[256];
     if(argc != 2){
         printf("Invalid Command\n");
         exit(0);
     }
+    char tempStr[16] = "0";
+    State8085 * simulator = Init8085();
+    // printf("Enter load memory address:\t");
+    // scanf("%hx",&load_address);
+    FILE *fptr;
+    char line[256];
     fptr = fopen(argv[1],"r");
     if (fptr == NULL)
     {
-        printf("Cannot open file \n");
+        printf("Error: Cannot open file \n");
         exit(0);
     }
     while (fgets(line, sizeof(line), fptr)) {
@@ -190,7 +382,79 @@ int main(int argc, char** argv){
         lineCount++;
     }
     fclose(fptr);
-    for (int i = 0; i < instCount ; i++) {
-        // printf("%s\n",instSet[i].instruction);
-    }
+    generateInstruction();    
+    LoadProgram(simulator,ram,temp_sp,load_address);
+    int option,option2;
+    uint8_t temp8;
+    uint16_t temp16;
+    uint32_t temp32;
+
+    while(1){
+        printf("Menu\n\t1. Execute program\n\t2. Get memory location\n\t3. Set memory location\n");
+        printf("\t4. Check General Register\n\t5. Set General Register\n");
+        printf("\t6. Check Flag Register\n\t7. Set Flag Register\n");
+        printf("\t8. Show Opcode\n\t9. Show Mnemonics\n\t10. Dump Memory\n");
+        printf("\t0. Exit\n\nEnter your choice:\t");
+        scanf("%d",&option);
+        switch (option)
+        {
+        case 1:
+            ExecuteProgram(simulator,load_address);
+            break;        
+        case 2:
+            printf("Enter memory location:\t");
+            scanf("%x",&temp32);
+            getMemory(simulator,temp32);
+            break;
+        case 3:
+            printf("Enter memory location:\t");
+            scanf("%x",&temp32);
+            printf("Enter 8 Bit number:\t");
+            scanf("%hhx",&temp8);
+            setMemory(simulator,temp32,temp8);
+            break;
+        case 4:
+            showRegisters(simulator);
+            break;
+        case 5:
+            printf("Please select a General Register:\n");
+            printf("\t%d. %s\n",1,"A");
+            printf("\t%d. %s\n",2,"B");
+            printf("\t%d. %s\n",3,"C");
+            printf("\t%d. %s\n",4,"D");
+            printf("\t%d. %s\n",5,"E");
+            printf("\t%d. %s\n",6,"H");
+            printf("\t%d. %s\n",7,"L");
+            printf("\t%d. %s\n",8,"Stack Pointer");
+            printf("\t%d. %s\n",9,"Program Counter");
+            scanf("%d",&option2);
+            updateRegister(simulator,option2-1);
+            break;
+        case 6:
+            showFlagRegisters(simulator);
+            break;
+        case 7:
+            printf("Please select a Flag Register:\n");
+            printf("\t%d. %s  Flag\n",1,"Carry");
+            printf("\t%d. %s  Flag\n",2,"Parity");
+            printf("\t%d. %s  Flag\n",3,"Auxiliary Carry");
+            printf("\t%d. %s  Flag\n",4,"Zero");
+            printf("\t%d. %s  Flag\n",5,"Sign");
+            scanf("%d",&option2);
+            updateFlag(simulator,option2-1);
+            break;
+        case 8:
+            showOpcode();
+            break;
+        case 9:
+            showMnemonics();
+            break;
+        case 10:
+            dumpMemory(simulator);
+            break;
+        case 0:
+            dumpMemory(simulator);
+            exit(0);
+        }
+    }    
 }
