@@ -3,7 +3,7 @@
 int labelCount = 0;
 int lineCount = 1;
 int instCount = 0;
-uint8_t ram[0x1000];
+uint8_t ram[0x10000];
 uint16_t temp_sp = 0x0000;
 Instruction instSet[1000];
 Label labels[100];
@@ -357,8 +357,13 @@ int main(int argc, char** argv){
     }
     char tempStr[16] = "0";
     State8085 * simulator = Init8085();
-    // printf("Enter load memory address:\t");
-    // scanf("%hx",&load_address);
+    printf("\n           --------------\n");
+    printf("           8085 SIMULATOR           \n");
+    printf("           --------------\n");
+    printf("Made by BCSEIII Roll 68 70 73 76 L9\n");
+    printf("-----------------------------------\n");
+    printf("Enter load memory address:\t");
+    scanf("%hx",&load_address);
     FILE *fptr;
     char line[256];
     fptr = fopen(argv[1],"r");
@@ -393,7 +398,8 @@ int main(int argc, char** argv){
         printf("Menu\n\t1. Execute program\n\t2. Get memory location\n\t3. Set memory location\n");
         printf("\t4. Check General Register\n\t5. Set General Register\n");
         printf("\t6. Check Flag Register\n\t7. Set Flag Register\n");
-        printf("\t8. Show Opcode\n\t9. Show Mnemonics\n\t10. Dump Memory\n");
+        printf("\t8. Show Opcode\n\t9. Show Mnemonics\n");
+        // printf("\t10. Dump Memory\n");
         printf("\t0. Exit\n\nEnter your choice:\t");
         scanf("%d",&option);
         switch (option)
@@ -402,9 +408,19 @@ int main(int argc, char** argv){
             ExecuteProgram(simulator,load_address);
             break;        
         case 2:
-            printf("Enter memory location:\t");
-            scanf("%x",&temp32);
-            getMemory(simulator,temp32);
+            option2 = 0;
+            while(1){
+                if(option2==0){
+                    printf("Enter memory location:\t");
+                    scanf("%x",&temp32);
+                }
+                getMemory(simulator,temp32);
+                printf("\nPress  1 for NEXT %04x\nPress -1 for PREV %04x\n0 to close memory read\nChoice:\t",temp32+1,temp32-1);
+                scanf("%d",&option2);
+                if(option2==0)
+                    break;
+                temp32 += option2;
+            }
             break;
         case 3:
             printf("Enter memory location:\t");
