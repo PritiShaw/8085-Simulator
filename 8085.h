@@ -112,6 +112,10 @@ intruction_type getMnemonicsType(char * m){
 uint8_t getOpcode(char * m, int size){
 
 	FILE* file = fopen(".mnemonics", "r");
+	if(file == NULL){
+		printf("Supporting file .mnemonics required\n");
+		exit(0);
+	}
 	uint8_t i = 0x00;
 	char temp[20];
 	int sizeInp;
@@ -1432,7 +1436,9 @@ int Emulate8085Op(State8085 *state, uint16_t offset)
 
 void loadMemory(State8085 * state){
 	FILE *fptr;
-	fptr = fopen(".memory", "r");
+	fptr = fopen(".memory", "r+");
+	if(fptr==NULL)
+		return;
 	int i = 0;
 	char temp[3];
 	while(i<0x10000 && !feof (fptr)){

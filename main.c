@@ -352,14 +352,14 @@ void showMnemonics(){
 
 int main(int argc, char** argv){
     if(argc != 2){
-        printf("Invalid Command\n");
+        printf("Please provide path to Assembly code file\n");
         exit(0);
     }
     char tempStr[16] = "0";
     State8085 * simulator = Init8085();
-    printf("\n           --------------\n");
-    printf("           8085 SIMULATOR           \n");
-    printf("           --------------\n");
+    printf("\n           --------------        \n");
+    printf("           8085 SIMULATOR          \n");
+    printf("           --------------          \n");
     printf("Made by BCSEIII Roll 68 70 73 76 L9\n");
     printf("-----------------------------------\n");
     printf("Enter load memory address:\t");
