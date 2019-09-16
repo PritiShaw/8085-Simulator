@@ -1435,7 +1435,7 @@ void loadMemory(State8085 * state){
 	fptr = fopen(".memory", "r");
 	int i = 0;
 	char temp[3];
-	while(i<0x1000 && !feof (fptr)){
+	while(i<0x10000 && !feof (fptr)){
 	    fscanf(fptr,"%s", temp);
 		state->memory[i++]= strtoul(temp, NULL, 8);
 	}
@@ -1446,7 +1446,7 @@ void dumpMemory(State8085 * state){
 	FILE *fptr;
 	fptr = fopen(".memory", "w");
 	int i = 0x0;
-	while(i<0x1000)
+	while(i<0x10000)
 		fprintf(fptr,"%02x ", state->memory[i++]);
     fclose(fptr);
 	return;
@@ -1454,7 +1454,7 @@ void dumpMemory(State8085 * state){
 State8085 *Init8085(void)
 {
 	State8085 *state = (State8085 *)calloc(1, sizeof(State8085));
-	state->memory = (uint8_t * )malloc(0x1000); //16K
+	state->memory = (uint8_t * )malloc(0x10000); //16K
 	loadMemory(state);
 	if(DEBUG) printf("State Ptr: %p\n", state);
 	return state;
@@ -1474,15 +1474,15 @@ State8085 *LoadProgram(State8085 *state, uint8_t *lines, int len, uint16_t offse
 	return state;
 }
 
-void getMemory(State8085 *state, uint32_t i){
-	if(i<0 || i > 0x1000)
+void getMemory(State8085 *state, uint16_t i){
+	if(i<0 || i > 0x10000)
 		printf("Memory out of bound\n");
 	else
 		printf("[%04x] = %02x\n",i,state->memory[i]);
 }
 
-void setMemory(State8085 *state, uint32_t i, uint8_t newVal){
-	if(i<0 || i > 0x1000)
+void setMemory(State8085 *state, uint16_t i, uint8_t newVal){
+	if(i<0 || i > 0x10000)
 		printf("Memory out of bound\n");
 	else
 		state->memory[i] = newVal;
