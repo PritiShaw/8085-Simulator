@@ -397,7 +397,7 @@ void captureSnapshot(State8085 * state){
     fprintf(ofile," S | Z | AC | P | CY |\n");
 	fprintf(ofile," %d | %d |  %d | %d |  %d |\n\n",state->cc.s,state->cc.z,state->cc.ac,state->cc.p,state->cc.cy);
 
-    fprintf(ofile,"\nMemory Map\n\n");
+    fprintf(ofile,"\nMemory Dump\n\n");
     uint8_t i = 0x0;
     uint16_t j = 0x0;
     fprintf(ofile,"  \t");
