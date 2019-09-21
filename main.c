@@ -3,11 +3,11 @@
 int labelCount = 0;
 int lineCount = 1;
 int instCount = 0;
-uint8_t ram[0x10000];
+uint8_t ram[RAMSIZE];
 uint16_t temp_sp = 0x0000;
+uint16_t load_address = 0x0000;
 Instruction instSet[1000];
 Label labels[100];
-uint16_t load_address = 0x0000;
 
 int searchLabel(char * key){
     for(int i = 0 ; i < labelCount; i++)
@@ -120,6 +120,7 @@ int generateInstruction(){
                 break;
             }
         }
+        instSet[i].size = size;
         switch (size * bit * isComma / abs(isComma))
         {
             case -1:
@@ -136,6 +137,7 @@ int generateInstruction(){
                 break;
             case 2:
                 // ADD A
+                instSet[i].size = 1;
                 strcpy(temp,mne);
                 strcat(temp,operand);
                 opCode = getOpcode(temp,1);
@@ -350,11 +352,73 @@ void showMnemonics(){
     }
 }
 
+void captureSnapshot(State8085 * state){
+    FILE * ofile;
+    time_t rawtime;
+    struct tm * timeinfo;
+    time ( &rawtime );
+    timeinfo = localtime ( &rawtime );
+    char * timer = asctime (timeinfo);
+    char filename[256] = "./snapshots/";
+    timer[strlen(timer)-1] = '\0';
+    strcat(filename,timer);
+    strcat(filename,".info");
+    for(int i = 0; i < strlen(filename); i++)
+        if(filename[i] == ' ')
+            filename[i] = '_';
+
+    ofile = fopen(filename,"w");
+
+    fprintf(ofile,"Generated on: %s\n\n",timer);
+    fprintf(ofile,"Assembly Code\n\n%10s\t%s\t\t%s\n","Location","Opcode","Mnemonics");
+    uint16_t temp_add = load_address;
+    for (int i = 0; i < instCount ; i++) {
+        fprintf(ofile,"\t%04x\t",temp_add);
+        for(int j = 0; j < instSet[i].size; j++)
+            fprintf(ofile,"%02x ",state->memory[temp_add++]);
+
+        for(int j = 3; j >instSet[i].size; j--)
+            fprintf(ofile,"   ");
+        fprintf(ofile,"\t%s\n",instSet[i].instruction);
+    }
+    fprintf(ofile,"\nGeneral Purpose Registers\n\n");
+    
+	fprintf(ofile," A\t   %02x\n",state->a);
+	fprintf(ofile," B\t   %02x\n",state->b);
+	fprintf(ofile," C\t   %02x\n",state->c);
+	fprintf(ofile," D\t   %02x\n",state->d);
+	fprintf(ofile," E\t   %02x\n",state->e);
+	fprintf(ofile," H\t   %02x\n",state->h);
+	fprintf(ofile," L\t   %02x\n",state->l);
+	fprintf(ofile," SP\t  %04x\n",state->sp);
+	fprintf(ofile," PC\t  %04x\n\n",state->pc);
+
+    fprintf(ofile,"\nFlags\n\n");
+    fprintf(ofile," S | Z | AC | P | CY |\n");
+	fprintf(ofile," %d | %d |  %d | %d |  %d |\n\n",state->cc.s,state->cc.z,state->cc.ac,state->cc.p,state->cc.cy);
+
+    fprintf(ofile,"\nMemory Map\n\n");
+    uint8_t i = 0x0;
+    uint16_t j = 0x0;
+    fprintf(ofile,"  \t");
+    for(j = 0; j<0x10; j++)
+        fprintf(ofile,"%2x ",j);
+    fprintf(ofile,"\n");
+    uint16_t pointer = 0x00;
+    for(j = 0; j<0x100; j++){
+        fprintf(ofile,"\n%02x\t",j);
+        for(i = 0; i<0x10; i++){
+            fprintf(ofile,"%02x ",state->memory[pointer++]);
+        }
+    }
+    fclose(ofile);
+}
 int main(int argc, char** argv){
     if(argc != 2){
         printf("Please provide path to Assembly code file\n");
         exit(0);
     }
+    macroProcessor(argv[1]);
     char tempStr[16] = "0";
     State8085 * simulator = Init8085();
     printf("\n           --------------        \n");
@@ -366,7 +430,7 @@ int main(int argc, char** argv){
     scanf("%hx",&load_address);
     FILE *fptr;
     char line[256];
-    fptr = fopen(argv[1],"r");
+    fptr = fopen(".tempasm","r");
     if (fptr == NULL)
     {
         printf("Error: Cannot open file \n");
@@ -387,6 +451,7 @@ int main(int argc, char** argv){
         lineCount++;
     }
     fclose(fptr);
+    remove(".tempasm");
     generateInstruction();    
     LoadProgram(simulator,ram,temp_sp,load_address);
     int option,option2;
@@ -395,11 +460,11 @@ int main(int argc, char** argv){
     uint32_t temp32;
 
     while(1){
-        printf("Menu\n\t1. Execute program\n\t2. Get memory location\n\t3. Set memory location\n");
+        printf("\nMenu\n\t1. Execute program\n\t2. Get memory location\n\t3. Set memory location\n");
         printf("\t4. Check General Register\n\t5. Set General Register\n");
         printf("\t6. Check Flag Register\n\t7. Set Flag Register\n");
         printf("\t8. Show Opcode\n\t9. Show Mnemonics\n");
-        // printf("\t10. Dump Memory\n");
+        printf("\t10. Capture Snapshot\n");
         printf("\t0. Exit\n\nEnter your choice:\t");
         scanf("%d",&option);
         switch (option)
@@ -415,7 +480,9 @@ int main(int argc, char** argv){
                     scanf("%x",&temp32);
                 }
                 getMemory(simulator,temp32);
-                printf("\nPress  1 for NEXT %04x\nPress -1 for PREV %04x\n0 to close memory read\nChoice:\t",temp32+1,temp32-1);
+                if(temp32 != 0x1000) printf("\nPress  1 for NEXT %04x",temp32+1);
+                if(temp32 != 0) printf("\nPress -1 for PREV %04x",temp32-1);
+                printf("\n0 to close memory read\nChoice:\t");                
                 scanf("%d",&option2);
                 if(option2==0)
                     break;
@@ -466,7 +533,7 @@ int main(int argc, char** argv){
             showMnemonics();
             break;
         case 10:
-            dumpMemory(simulator);
+            captureSnapshot(simulator);
             break;
         case 0:
             dumpMemory(simulator);
