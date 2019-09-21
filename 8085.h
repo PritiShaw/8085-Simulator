@@ -4,7 +4,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <time.h>
+
 #define DEBUG  0
+#define RAMSIZE 0x1000 //4096
 
 typedef struct Flags
 {
@@ -40,6 +43,14 @@ typedef struct Label
 	int linkedCount;
 	int references;
 } Label;
+
+typedef struct Macro
+{
+	int parametersCount;
+	char name[15];
+	char template[10][16];	
+	int lineCount;	
+} Macro;
 
 Flags CC_ZSPAC = {0, 0, 0, 0, 0};
 
@@ -147,7 +158,7 @@ int parity(int x, int size)
 	return (0 == (p & 0x1));
 }
 
-int Disassemble8085Op(unsigned char *codebuffer, int pc)
+int UnimplementedErrorDisp(unsigned char *codebuffer, int pc)
 {
 	unsigned char *code = &codebuffer[pc];
 	int opbytes = 1;
@@ -221,7 +232,7 @@ void UnimplementedInstruction(State8085 *state)
 	//pc will have advanced one, so undo that
 	if(DEBUG) printf("Error: Unimplemented instruction\n");
 	state->pc--;
-	Disassemble8085Op(state->memory, state->pc);
+	UnimplementedErrorDisp(state->memory, state->pc);
 	if(DEBUG) printf("\n");
 	exit(1);
 }
@@ -283,7 +294,7 @@ void returnToCaller(State8085 *state, uint16_t offset)
 	state->sp += 2;
 }
 
-int Emulate8085Op(State8085 *state, uint16_t offset)
+int Emulate8085(State8085 *state, uint16_t offset)
 {
 	int cycles = 4;
 	unsigned char *opcode = &state->memory[state->pc];
@@ -1440,10 +1451,10 @@ void loadMemory(State8085 * state){
 	if(fptr==NULL)
 		return;
 	int i = 0;
-	char temp[3];
-	while(i<0x10000 && !feof (fptr)){
-	    fscanf(fptr,"%s", temp);
-		state->memory[i++]= strtoul(temp, NULL, 8);
+	uint8_t temp8;
+	while(i<RAMSIZE && !feof (fptr)){
+		fscanf(fptr,"%hhx",&temp8);
+		state->memory[i++]= temp8;
 	}
     fclose(fptr);
 	return;	
@@ -1452,7 +1463,7 @@ void dumpMemory(State8085 * state){
 	FILE *fptr;
 	fptr = fopen(".memory", "w");
 	int i = 0x0;
-	while(i<0x10000)
+	while(i<RAMSIZE)
 		fprintf(fptr,"%02x ", state->memory[i++]);
     fclose(fptr);
 	return;
@@ -1460,7 +1471,7 @@ void dumpMemory(State8085 * state){
 State8085 *Init8085(void)
 {
 	State8085 *state = (State8085 *)calloc(1, sizeof(State8085));
-	state->memory = (uint8_t * )malloc(0x10000); //16K
+	state->memory = (uint8_t * )malloc(RAMSIZE); //4096
 	loadMemory(state);
 	if(DEBUG) printf("State Ptr: %p\n", state);
 	return state;
@@ -1481,14 +1492,14 @@ State8085 *LoadProgram(State8085 *state, uint8_t *lines, int len, uint16_t offse
 }
 
 void getMemory(State8085 *state, uint16_t i){
-	if(i<0 || i > 0x10000)
+	if(i<0 || i > RAMSIZE)
 		printf("Memory out of bound\n");
 	else
 		printf("[%04x] = %02x\n",i,state->memory[i]);
 }
 
 void setMemory(State8085 *state, uint16_t i, uint8_t newVal){
-	if(i<0 || i > 0x10000)
+	if(i<0 || i > RAMSIZE)
 		printf("Memory out of bound\n");
 	else
 		state->memory[i] = newVal;
@@ -1582,25 +1593,6 @@ void showFlagRegisters(State8085 *state){
 	printf(" %d\t| %d\t| %d\t| %d\t| %d\t|\n\n",state->cc.s,state->cc.z,state->cc.ac,state->cc.p,state->cc.cy);
 }
 
-int ExecuteProgramUntil(State8085 *state, uint16_t offset, uint16_t startAt, uint16_t pauseAt)
-{
-	int done = 0;
-	if(DEBUG) printf("Start At: %x\n", startAt);
-	if(DEBUG) printf("Offset: %x\n", offset);
-	if(offset == startAt)
-		state->sp = 0xFFFF;
-	state->pc = startAt;
-	printf("Pause At: %4x\n", pauseAt);
-	while (done == 0 && state->pc < pauseAt)
-	{
-		done = Emulate8085Op(state, offset);
-		if(DEBUG) printf("PC in C %x", state->pc);
-	}
-	if(DEBUG) showFlagRegisters(state);
-	if(DEBUG) showRegisters(state);
-	return done;
-}
-
 State8085 *ExecuteProgram(State8085 *state, uint16_t offset)
 {
 	int done = 0;
@@ -1619,10 +1611,180 @@ State8085 *ExecuteProgram(State8085 *state, uint16_t offset)
 			printf("Error Timeout\n");
 			exit(0);			
 		}
-		done = Emulate8085Op(state, offset);
+		done = Emulate8085(state, offset);
 		cycles++;
 	}
 	if(DEBUG) showFlagRegisters(state);
 	if(DEBUG) showRegisters(state);
 	return state;
+}
+
+void stringReplace(char * line,char * find,char * replace){
+	int debug = 0;
+	char final[256];
+	char temp1[125];
+	char temp2[125];
+	int findLen 	= strlen(find);
+	int replaceLen 	= strlen(replace);
+	char * sub;
+	sub = strstr(line,find);
+	if(sub == NULL)
+		return;
+	if(sub[findLen] == '\n'  || sub[findLen] == ' '){
+		while(sub != NULL){
+			int sIdx = sub - line;
+			int i,j;
+			for(i=0; i < sIdx ; i++)
+				temp1[i] = line[i];
+			temp1[i] = '\0';
+			j = 0;
+			for(i=sIdx + findLen; i < strlen(line) ; i++)
+				temp2[j++] = line[i];
+			temp2[j] = '\0';
+			strcpy(final,temp1);
+			strcat(final,replace);
+			strcat(final,temp2);
+			strcpy(line,final);
+			sub = strstr(line,find);
+		}
+	}
+}
+
+int macroProcessor(char * filename){
+	FILE * iFile;
+	FILE * oFile;
+	Macro macros[100];
+	int macroCount = 0;
+	
+	iFile = fopen(filename,"r");
+	oFile = fopen(".tempasm","w");
+	if (iFile == NULL){
+        printf("Error: Cannot open file \n");
+        exit(0);
+    }
+	char line[256];
+	int macroSection = 1;
+	while (fgets(line, sizeof(line), iFile)) {
+		for(char* c=line; *c=toupper(*c); ++c) ;
+		char * sub;
+		sub = strstr(line,"MACRO");
+		if(sub != NULL){
+			if(macroSection == 0){
+				printf("Incorrect Macro Declaration\n");
+				exit(0);
+			}
+			int sIdx = sub - line;
+			Macro temp;
+			char name[6];
+			char subLine[256];
+			int i;
+			for(i = 0; i <sIdx; i++)
+				name[i] = line[i];
+			name[i-1] = '\0';
+			strcpy(temp.name,name);
+			i = 0;
+			temp.lineCount = 0;
+			while(fgets(subLine, sizeof(subLine), iFile)){
+				for(char* c=subLine; *c=toupper(*c); ++c) ;
+				sub = strstr(subLine,"ENDM");
+				if(sub != NULL){
+					break;
+				}
+				strcpy(temp.template[temp.lineCount++],subLine);				
+			}
+			char paramName[6] = " ";
+			int j=1;
+			for(i = sIdx + 6; i < strlen(line);i++){
+				if(line[i]==' ' || line[i]=='\n'){
+					paramName[j] = '\0';
+					if(strlen(paramName)>1){
+						//process the macro 
+						for(j=0;j<temp.lineCount;j++){
+							sub = strstr(temp.template[j],paramName);
+							if(sub != NULL){
+								// Line contains parameter
+								char tempStr[10];
+								sprintf(tempStr, " %%%d      ", temp.parametersCount); 
+								stringReplace(temp.template[j],paramName,tempStr);
+							}
+						}
+						temp.parametersCount++;
+					}
+					j = 1;
+				}
+				else{
+					paramName[j++] = line[i];
+				}
+			}
+			macros[macroCount++] = temp;
+		}
+		else{
+			macroSection = 0;
+		}
+		if(macroSection == 0){
+			char name[15];
+			int i;
+			for(i = 0 ; i < 15;i++){
+				if(line[i] == ' ')
+					break;
+				name[i] = line[i];
+			}
+			name[i] = '\0';
+			int macroIdx = -1;
+			for(i = 0;i<macroCount;i++){
+				if(strcmp(name,macros[i].name)==0){
+					macroIdx = i;
+					break;
+				}
+			}
+			if(macroIdx!=-1){
+				char tempStr[16];
+				char paramArr[10][50];
+				sub = strstr(line,name);
+				int paramCount = 0;
+				int j = 0;
+
+				char * p = sub + strlen(name);
+				while(* p && isspace(* p)) ++p;
+				int length = 0;
+				while(*p != ';' && *p != '\n' && *p != '\0'){
+					tempStr[length++] = *p;
+					p++;
+				}
+				tempStr[length] = '\0';
+				for(j = length - 1; j>-1;j--){
+					if(tempStr[j] == ' ')
+						tempStr[j] = '\0';
+					else
+						break;
+					length--;
+				}
+			    char* token = strtok(tempStr, " ");  
+				while (token != 0) { 
+					strcpy(paramArr[paramCount++],token);
+					token = strtok(0, " "); 
+				}
+				if(macros[macroIdx].parametersCount != paramCount){
+					printf("Error: MACRO %s parameter mismatch, required %d, given %d\n",macros[macroIdx].name,macros[macroIdx].parametersCount,paramCount);
+					break;
+				}
+				for(i=0;i<macros[macroIdx].lineCount;i++){					
+					if(strlen(macros[macroIdx].template[i])>1){
+						strcpy(tempStr,macros[macroIdx].template[i]);
+						for(j = 0;j<paramCount;j++){
+							char tempParamName[5];
+							sprintf(tempParamName, "%%%d", j); 
+							stringReplace(tempStr,tempParamName,paramArr[j]);
+						}
+						fprintf(oFile,"%s",tempStr);
+					}
+				}
+			}
+			else
+				if(strlen(line)>3)
+					fprintf(oFile,"%s",line);
+		}
+    }
+    fclose(iFile);
+	fclose(oFile);
 }
