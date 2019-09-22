@@ -243,10 +243,12 @@ The simulator supports all commonly used Mnenomics used in 8085 microprocessor. 
 ```
 7. **Macro**
 ```
+{
 	int parametersCount;
 	char name[15];
 	char template[10][16];	
 	int lineCount;	
+}
 ```
 
 ---
