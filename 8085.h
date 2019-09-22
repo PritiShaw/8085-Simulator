@@ -52,8 +52,6 @@ typedef struct Macro
 	int lineCount;	
 } Macro;
 
-Flags CC_ZSPAC = {0, 0, 0, 0, 0};
-
 typedef struct State8085
 {
 	uint8_t a;
@@ -175,32 +173,33 @@ int UnimplementedErrorDisp(unsigned char *codebuffer, int pc)
 		printf("IN");
 		opbytes = 2;
 		break;
-	case 0xf3:
-		printf("DI");
+	case 0xd3:
+		printf("OUT");
+		opbytes = 2;
 		break;
 	case 0xc7:
-		printf("RST    0");
+		printf("RST 0");
 		break;
 	case 0xcf:
-		printf("RST    1");
+		printf("RST 1");
 		break;
 	case 0xd7:
-		printf("RST    2");
+		printf("RST 2");
 		break;
 	case 0xdf:
-		printf("RST    3");
+		printf("RST 3");
 		break;
 	case 0xe7:
-		printf("RST    4");
+		printf("RST 4");
 		break;
 	case 0xef:
-		printf("RST    5");
+		printf("RST 5");
 		break;
 	case 0xf7:
-		printf("RST    6");
+		printf("RST 6");
 		break;
 	case 0xff:
-		printf("RST    7");
+		printf("RST 7");
 		break;
 	}
 
@@ -1206,7 +1205,7 @@ int Emulate8085(State8085 *state, uint16_t offset)
 			state->pc += 2;
 		break;
 	case 0xd3:
-		//Don't know what to do here (yet)
+		UnimplementedInstruction(state);
 		state->pc++;
 		break;
 	case 0xd4: // CNC Addr
@@ -1374,7 +1373,7 @@ int Emulate8085(State8085 *state, uint16_t offset)
 			state->pc += 2;
 		break;
 	case 0xf3: // DI
-		UnimplementedInstruction(state);
+		state->int_enable = 0;
 		break;
 	case 0xf4: // CP Addr
 		if (0 == state->cc.s)
