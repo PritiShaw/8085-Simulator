@@ -1,4 +1,6 @@
-BCSEIII Systems Lab Assignment 3
+# 8085-Simulator
+
+JU BCSEIII Systems Lab Assignment 3
 
 ### Made By following students of A3
 
