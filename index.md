@@ -1,3 +1,8 @@
+---
+layout: post
+title:  "8085 Simulator Manual"
+author: Roll 67,70,73,76,L9
+---
 BCSEIII Systems Lab Assignment 3
 
 ### Made By following students of A3
