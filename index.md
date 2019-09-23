@@ -1,9 +1,7 @@
 ---
-layout: post
 title:  "Documentation and Manual"
-author: Roll 67,70,73,76,L9
 ---
-JU BCSEIII Systems Lab Assignment 3
+# Documentation and Manual
 
 ### Made By following students of A3
 
@@ -13,7 +11,7 @@ JU BCSEIII Systems Lab Assignment 3
 | 001710501070| Akash Ghosh |
 | 001710501073| Rohit Rajat Chattopadhyay |
 | 001710501076| Priti Shaw |
-| 001810501009| Soumika Mukherjee |
+| 301810501009| Soumika Mukherjee |
 
 
 ### Table of Contents
@@ -64,10 +62,11 @@ JU BCSEIII Systems Lab Assignment 3
 3. **Retains Memory State**  
     Before exit, the state of Memory is dumped in a file which is read when the program is started again. This allows the Simulator to retain its previous state.
 
-4. **General Purpose Registers and Flag Register**  
+4. **Two Pass Assembler**
+
+5. **General Purpose Registers and Flag Register**  
     There are 7 8-bit registers namely `A`,`B`,`C`,`D`,`E`,`H` and `L` . These can be paired up as `BE`,`DE` and `HL` to make 16-bit register pairs.   
-    Program Counter(`PC`) and Stack Pointer(`SP`) Registers are 16-bit registers, Processor Status Word(`PSW`) is 8-bit Register
-    
+    Program Counter(`PC`) and Stack Pointer(`SP`) Registers are 16-bit registers, Processor Status Word(`PSW`) is 8-bit Register.  
     
 
 ### 2.b Commands List
@@ -247,10 +246,12 @@ The simulator supports all commonly used Mnenomics used in 8085 microprocessor. 
 ```
 7. **Macro**
 ```
+{
 	int parametersCount;
 	char name[15];
 	char template[10][16];	
 	int lineCount;	
+}
 ```
 
 ---
