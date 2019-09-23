@@ -7,3 +7,5 @@ JUBCSE Systems programming Assignment 3
 3. *Rohit Rajat Chattopadhyay*
 4. *Priti Shaw*
 5. *Soumika Mukherjee*
+
+***Please Note**: Copy `design.memory` and rename the copy to `.memory` at first load.*
