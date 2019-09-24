@@ -186,8 +186,12 @@ The simulator supports all commonly used Mnenomics used in 8085 microprocessor. 
 |XRI n    |EE|Exclusive OR Immediate    |A=Axn        |
 |XTHL     |E3|Exchange stack Top with HL|[SP]<->HL    |
 
+`r` : Register
+`n` : Hexadecimal Number
+
 ---
 ### 3. Flowchart
+![FlowChart](https://i.imgur.com/VA6KMsQ.png "Flowchart")
 
 ---
 ### 4. Structure
