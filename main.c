@@ -49,6 +49,7 @@ int detectLabel(char * line){
         return -1;
     }
     else if(labels[i].instNo==-1 && labels[i].references>0){
+        //forward reference
         labels[i].instNo = instCount;
         labels[i].lineNo = lineCount;
         return -1;
@@ -397,9 +398,18 @@ void captureSnapshot(State8085 * state){
     fprintf(ofile," S | Z | AC | P | CY |\n");
 	fprintf(ofile," %d | %d |  %d | %d |  %d |\n\n",state->cc.s,state->cc.z,state->cc.ac,state->cc.p,state->cc.cy);
 
+    int idx;
+    uint16_t j = load_address;
+    if(labelCount>0){
+        fprintf(ofile,"Symbol Table\n\nLabel\tLocation\n");
+        for(idx = 0; idx<labelCount;idx++){
+            fprintf(ofile,"%s\t%04x\n",labels[idx].name,labels[idx].declaration);
+        }
+    }
+    // fprintf(ofile,);
     fprintf(ofile,"\nMemory Dump\n\n");
     uint8_t i = 0x0;
-    uint16_t j = 0x0;
+    j = 0x00;
     fprintf(ofile,"  \t");
     for(j = 0; j<0x10; j++)
         fprintf(ofile,"%2x ",j);
@@ -424,7 +434,7 @@ int main(int argc, char** argv){
     printf("\n           --------------        \n");
     printf("           8085 SIMULATOR          \n");
     printf("           --------------          \n");
-    printf("Made by BCSEIII Roll 68 70 73 76 L9\n");
+    printf("Made by BCSEIII Roll 67 70 73 76 L9\n");
     printf("-----------------------------------\n");
     printf("Enter load memory address:\t");
     scanf("%hx",&load_address);
