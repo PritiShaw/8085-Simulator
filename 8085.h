@@ -202,7 +202,7 @@ int UnimplementedErrorDisp(unsigned char *codebuffer, int pc)
 		printf("RST 7");
 		break;
 	}
-
+	printf("\n");
 	return opbytes;
 }
 
@@ -229,17 +229,16 @@ void ArithFlagsA(State8085 *state, uint16_t res, should_preserve_carry preserveC
 void UnimplementedInstruction(State8085 *state)
 {
 	//pc will have advanced one, so undo that
-	if(DEBUG) printf("Error: Unimplemented instruction\n");
+	printf("Error: Unimplemented instruction\n");
 	state->pc--;
 	UnimplementedErrorDisp(state->memory, state->pc);
-	if(DEBUG) printf("\n");
-	exit(1);
+	// exit(1);
 }
 
 void InvalidInstruction(State8085 *state)
 {
 	//pc will have advanced one, so undo that
-	if(DEBUG) printf("Error: Invalid instruction\n");
+	printf("Error: Invalid instruction\n");
 	if(DEBUG) printf("PC: %x\n", state->pc);
 	if(DEBUG) printf("Memory at PC: %x\n", state->memory[state->pc]);
 	state->pc--;
@@ -1609,13 +1608,12 @@ State8085 *ExecuteProgram(State8085 *state, uint16_t offset)
 
 	while (done == 0)
 	{
-		if (cycles > 1000){
-			done = 1;
-			printf("Error Timeout\n");
+		if (cycles > 10000){
 			break;			
 		}
 		done = Emulate8085(state, offset);
 		cycles++;
+		if(DEBUG) getchar();
 	}
 	if(DEBUG) showFlagRegisters(state);
 	if(DEBUG) showRegisters(state);

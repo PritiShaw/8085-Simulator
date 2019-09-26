@@ -547,6 +547,7 @@ int main(int argc, char** argv){
             break;
         case 0:
             dumpMemory(simulator);
+            printf("\nMemory has been dumped.\nHave a nice day.\n");
             exit(0);
         }
     }    

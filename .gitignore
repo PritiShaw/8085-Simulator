@@ -1,6 +1,6 @@
 a.out
 .memory
-example.asm
+.tempasm
 .vscode/*
 _site
 *.lock

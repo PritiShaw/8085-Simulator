@@ -9,3 +9,14 @@ JUBCSE Systems programming Assignment 3
 5. *Soumika Mukherjee*
 
 ***Please Note**: Copy `design.memory` and rename the copy to `.memory` at first load.*
+
+#### To RUN
+```
+	chmod +x 8085
+	./8085 <PATH TO ASSEBMBLY FILE>
+```
+
+#### To COMPILE
+```
+	gcc main.c -o 8085
+```
