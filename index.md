@@ -191,7 +191,7 @@ The simulator supports all commonly used Mnenomics used in 8085 microprocessor. 
 
 ---
 ### 3. Flowchart
-![FlowChart](https://i.imgur.com/VA6KMsQ.png "Flowchart")
+![FlowChart](flowchart.svg "Flowchart")
 
 ---
 ### 4. Structure
