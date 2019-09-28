@@ -7,18 +7,18 @@ title:  "Documentation and Manual"
 
 | Roll No | Name|
 | -------- | -------- |
-| 001710501067| Dibyajyoti Dhar |
-| 001710501070| Akash Ghosh |
-| 001710501073| Rohit Rajat Chattopadhyay |
-| 001710501076| Priti Shaw |
-| 301810501009| Soumika Mukherjee |
+| 001710501067| [Dibyajyoti Dhar](https://github.com/djdhar) |
+| 001710501070| [Akash Ghosh](https://github.com/Akash-Ghosh-123) |
+| 001710501073| [Rohit Rajat Chattopadhyay](https://rohit.chattopadhyay.me) |
+| 001710501076| [Priti Shaw](https://github.com/pritishaw) |
+| 301810501009| [Soumika Mukherjee](https://github.com/soumiDeb) |
 
 
 ### Table of Contents
 1. [Assignment Details](#1-assignment-details)
 2. [Simulator Manual](#2-simulator-manual)  
     a. [Features](#2a-features)  
-    b. [Commands List](#2b-commands-list)  
+    b. [Instruction Set](#2b-instruction-set)  
 3. [Flowchart](#3-flowchart)
 4. [Structure](#4-structure)
 5. [Important Functions](#5-important-functions)
@@ -69,12 +69,10 @@ title:  "Documentation and Manual"
     Program Counter(`PC`) and Stack Pointer(`SP`) Registers are 16-bit registers, Processor Status Word(`PSW`) is 8-bit Register.  
     
 
-### 2.b Commands List
-The simulator supports all commonly used Mnenomics used in 8085 microprocessor. It also supports **Macroprocessor operations** using keyword `macro`. All numeric inputs are treated as Hexadecimal.
+### 2.b Instruction Set
+The simulator supports all commonly used Instructions used in 8085 microprocessor. It also supports **Macroprocessor operations** using keyword `macro`. All numeric inputs are treated as Hexadecimal.
 
-**Unsupported Mnenomics:** `RIM`,`SIM`,`IN`,`OUT` and `RST` interrupts work like `HLT`.
-
-**Supported Mnenomics**  
+**Supported Instructions**  
 
 |Mnemonic |Opcode|Description|Notes|
 |---------|--|--------------------------|-------------|
@@ -189,9 +187,15 @@ The simulator supports all commonly used Mnenomics used in 8085 microprocessor. 
 `r` : Register
 `n` : Hexadecimal Number
 
+
+**Unsupported Instructions**  
+`RIM`, `SIM`, `IN`, `OUT` and `RST` interrupts work like `HLT`.
+
 ---
 ### 3. Flowchart
-![FlowChart](flowchart.svg "Flowchart")
+*Click on flowchart to open in new window*  
+  
+[![FlowChart](flowchart.svg "Open Flowchart in new window")](https://pritishaw.github.io/8085-Simulator/flowchart.svg)
 
 ---
 ### 4. Structure
@@ -283,7 +287,7 @@ The simulator supports all commonly used Mnenomics used in 8085 microprocessor. 
 
 **`LoadProgram`** : Converts the mnemonics to opcode and stores in memory at the location as provided by the user.  
 
-**`ExecuteProgram`** : Sequential execution of the program starting from the `load_address` till halt command is received.  
+**`ExecuteProgram`** : Sequential execution of the program starting from the `load_address` till halt instruction is received.  
 
 **`captureSnapshot`** : Stores the state (snapshot) of the simulator in a readable file for user reference. The file contains details of Registers, Flag Register, Mnenomics, Opcode and the Memory dump.  
 
