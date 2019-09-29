@@ -300,7 +300,7 @@ int Emulate8085(State8085 *state, uint16_t offset)
 	unsigned char *opcode = &state->memory[state->pc];
 	if(DEBUG) printf("%04x---%02x\n", state->pc,state->memory[state->pc]);
 	if(offset == state->pc)
-		state->sp = 0xFFFF;
+		state->sp = 0x0FFF;
 
 	state->pc += 1;
 
@@ -1602,7 +1602,7 @@ State8085 *ExecuteProgram(State8085 *state, uint16_t offset)
 	if(DEBUG) printf("State Ptr: %p, SP Ptr: %p\n", state, &state->sp);
 	if(DEBUG) printf("Offset %x\n", offset);
 	state->pc = offset;
-	state->sp = 0xFFFF;
+	state->sp = 0x0FFF;
 	if(DEBUG) printf("Memory at offset %x\n", state->memory[offset]);
 	if(DEBUG) printf("Memory at offset + 1 %x\n", state->memory[offset + 1]);
 
