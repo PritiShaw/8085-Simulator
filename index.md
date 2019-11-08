@@ -189,7 +189,7 @@ The simulator supports all commonly used Instructions used in 8085 microprocesso
 
 
 **Unsupported Instructions**  
-`RIM`, `SIM`, `IN`, `OUT` and `RST` interrupts work like `HLT`.
+`RIM`, `SIM`, `IN`, `OUT` are **not** implemented and `RST` interrupts work like `HLT`.
 
 ---
 ### 3. Flowchart
